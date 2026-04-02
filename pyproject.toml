@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcpshield-runtime"
-version = "0.1.1"
+version = "0.1.2"
 description = "Secure MCP runtime — policy enforcement, SSRF blocking, audit logging"
 readme = "README.md"
 requires-python = ">=3.12"
