@@ -1,0 +1,31 @@
+allowed_tools:
+  - safe_tool
+  - list_files
+  - read_file
+  - get_time
+
+block_network: true
+block_env_access: true
+block_filesystem_write: true
+
+blocked_tool_patterns:
+  - read_secrets
+  - ssrf_fetch
+  - exec_command
+  - write_file
+  - delete_file
+
+blocked_arg_patterns:
+  - "169.254.169.254"
+  - "169.254.170.2"
+  - "localhost"
+  - "127.0.0.1"
+  - "0.0.0.0"
+  - "::1"
+  - "/etc/passwd"
+  - "/etc/shadow"
+  - "file://"
+  - "gopher://"
+
+max_memory_mb: 256
+execution_timeout_seconds: 30

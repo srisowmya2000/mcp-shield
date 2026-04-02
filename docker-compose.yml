@@ -1,0 +1,22 @@
+version: "3.9"
+services:
+  mcp-shield-api:
+    build: .
+    container_name: mcp-shield-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./reports:/app/reports
+      - ./policies:/app/policies:ro
+
+  malicious-mcp-demo:
+    build: ./examples/malicious_mcp_server
+    container_name: malicious-mcp-demo
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp:rw,noexec,nosuid,size=32m]
+    mem_limit: 128m
+    cpus: "0.25"
+    profiles: [demo]
