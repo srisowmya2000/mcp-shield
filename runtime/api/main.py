@@ -63,3 +63,11 @@ class RiskRequest(BaseModel):
 @app.post("/risk/score")
 def risk_score(req: RiskRequest):
     return score_server(req.tool_names)
+
+from fastapi.responses import FileResponse
+from pathlib import Path
+
+@app.get("/dashboard", tags=["dashboard"])
+def dashboard():
+    """Live real-time decision dashboard."""
+    return FileResponse(Path(__file__).parent.parent / "static" / "dashboard.html")

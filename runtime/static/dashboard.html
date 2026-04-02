@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mcp-shield dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #e6edf3; font-family: 'Segoe UI', monospace; }
+  header { background: #161b22; border-bottom: 1px solid #30363d; padding: 16px 32px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 20px; font-weight: 700; }
+  header span { font-size: 13px; color: #8b949e; }
+  .badge { background: #1f6feb; color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 24px 32px; }
+  .stat-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; }
+  .stat-card .label { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .stat-card .value { font-size: 36px; font-weight: 700; }
+  .stat-card.total .value { color: #e6edf3; }
+  .stat-card.allowed .value { color: #3fb950; }
+  .stat-card.blocked .value { color: #f85149; }
+  .stat-card .sub { font-size: 12px; color: #8b949e; margin-top: 4px; }
+
+  .feed-section { padding: 0 32px 32px; }
+  .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .feed-header h2 { font-size: 15px; font-weight: 600; }
+  .live-dot { width: 8px; height: 8px; background: #3fb950; border-radius: 50%; display: inline-block; margin-right: 6px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+  .feed { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .feed-row { display: grid; grid-template-columns: 160px 140px 160px 100px 1fr; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #21262d; font-size: 13px; align-items: center; transition: background 0.3s; }
+  .feed-row:last-child { border-bottom: none; }
+  .feed-row.new-block { animation: flashRed 0.6s ease; }
+  .feed-row.new-allow { animation: flashGreen 0.6s ease; }
+  @keyframes flashRed { 0% { background: #3d1a1a; } 100% { background: transparent; } }
+  @keyframes flashGreen { 0% { background: #1a3d1a; } 100% { background: transparent; } }
+  .feed-header-row { background: #0d1117; color: #8b949e; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .decision-block { color: #f85149; font-weight: 600; }
+  .decision-allow { color: #3fb950; font-weight: 600; }
+  .time { color: #8b949e; }
+  .server { color: #79c0ff; }
+  .tool { color: #ffa657; font-family: monospace; }
+  .reason { color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .empty { text-align: center; padding: 48px; color: #8b949e; }
+  .refresh-info { text-align: right; font-size: 11px; color: #30363d; padding: 8px 32px; }
+</style>
+</head>
+<body>
+
+<header>
+  <span>🛡️</span>
+  <h1>mcp-shield</h1>
+  <span class="badge">LIVE</span>
+  <span style="margin-left:auto; font-size:12px; color:#8b949e;" id="last-updated">—</span>
+</header>
+
+<div class="stats">
+  <div class="stat-card total">
+    <div class="label">Total Decisions</div>
+    <div class="value" id="stat-total">—</div>
+    <div class="sub">all time</div>
+  </div>
+  <div class="stat-card allowed">
+    <div class="label">✅ Allowed</div>
+    <div class="value" id="stat-allowed">—</div>
+    <div class="sub" id="stat-allow-pct">—</div>
+  </div>
+  <div class="stat-card blocked">
+    <div class="label">🚫 Blocked</div>
+    <div class="value" id="stat-blocked">—</div>
+    <div class="sub" id="stat-block-pct">—</div>
+  </div>
+</div>
+
+<div class="feed-section">
+  <div class="feed-header">
+    <h2><span class="live-dot"></span>Live Decision Feed</h2>
+    <span style="font-size:12px; color:#8b949e;">auto-refreshes every 2s</span>
+  </div>
+  <div class="feed">
+    <div class="feed-row feed-header-row">
+      <span>Time</span><span>Server</span><span>Tool</span><span>Decision</span><span>Reason</span>
+    </div>
+    <div id="feed-body">
+      <div class="empty">No decisions yet — start sending tool calls to /inspect</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let prevTotal = 0;
+  let prevIds = new Set();
+
+  async function refresh() {
+    try {
+      const [statsRes, logsRes] = await Promise.all([
+        fetch('/audit/stats'),
+        fetch('/audit?limit=30')
+      ]);
+      const stats = await statsRes.json();
+      const logs = (await logsRes.json()).logs;
+
+      // Update stats
+      const total = stats.total || 0;
+      const allowed = stats.allowed || 0;
+      const blocked = stats.blocked || 0;
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-allowed').textContent = allowed;
+      document.getElementById('stat-blocked').textContent = blocked;
+      document.getElementById('stat-allow-pct').textContent =
+        total > 0 ? `${((allowed/total)*100).toFixed(0)}% of decisions` : '—';
+      document.getElementById('stat-block-pct').textContent =
+        total > 0 ? `${((blocked/total)*100).toFixed(0)}% block rate` : '—';
+      document.getElementById('last-updated').textContent =
+        'Updated ' + new Date().toLocaleTimeString();
+
+      // Update feed
+      const feedBody = document.getElementById('feed-body');
+      if (!logs || logs.length === 0) {
+        feedBody.innerHTML = '<div class="empty">No decisions yet — start sending tool calls to /inspect</div>';
+        return;
+      }
+
+      const newIds = new Set(logs.map((l, i) => `${l.timestamp}-${l.tool}-${i}`));
+      feedBody.innerHTML = logs.map((log, i) => {
+        const id = `${log.timestamp}-${log.tool}-${i}`;
+        const isNew = !prevIds.has(id) && prevIds.size > 0;
+        const isBlock = log.decision === 'BLOCK';
+        const time = log.timestamp.replace('T',' ').substring(0,19);
+        const animClass = isNew ? (isBlock ? 'new-block' : 'new-allow') : '';
+        return `<div class="feed-row ${animClass}">
+          <span class="time">${time}</span>
+          <span class="server">${log.server}</span>
+          <span class="tool">${log.tool}</span>
+          <span class="${isBlock ? 'decision-block' : 'decision-allow'}">${isBlock ? '🚫 BLOCK' : '✅ ALLOW'}</span>
+          <span class="reason" title="${log.reason}">${log.reason}</span>
+        </div>`;
+      }).join('');
+
+      prevIds = newIds;
+    } catch(e) {
+      document.getElementById('last-updated').textContent = 'API unreachable';
+    }
+  }
+
+  refresh();
+  setInterval(refresh, 2000);
+</script>
+</body>
+</html>
