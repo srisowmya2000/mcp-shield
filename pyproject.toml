@@ -4,11 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcpshield-runtime"
-version = "0.1.0"
+version = "0.1.1"
 description = "Secure MCP runtime — policy enforcement, SSRF blocking, audit logging"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
 authors = [
     {name = "Sri Sowmya Nemani"}
 ]
@@ -17,7 +16,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Topic :: Security",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
     "fastapi>=0.115",

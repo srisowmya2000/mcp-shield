@@ -5,7 +5,6 @@
 
 ![Python](https://img.shields.io/badge/python-3.12-blue?style=flat-square)
 ![PyPI](https://img.shields.io/pypi/v/mcpshield-runtime?style=flat-square)
-![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Tests](https://img.shields.io/badge/tests-12%20passing-brightgreen?style=flat-square)
 ![Status](https://img.shields.io/badge/status-active-success?style=flat-square)
 
