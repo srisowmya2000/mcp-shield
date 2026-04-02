@@ -54,3 +54,12 @@ def stop(server_name: str):
 @app.get("/sandbox/list")
 def list_sandboxes():
     return {"sandboxes": list_running_sandboxes()}
+
+from runtime.risk_scorer import score_server
+
+class RiskRequest(BaseModel):
+    tool_names: list[str]
+
+@app.post("/risk/score")
+def risk_score(req: RiskRequest):
+    return score_server(req.tool_names)
