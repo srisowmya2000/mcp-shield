@@ -1,5 +1,7 @@
 # mcp-shield 🛡️
 
+MCP Shield is an early-stage security runtime and scanner for Model Context Protocol environments. It evaluates MCP tool calls against configurable policies, detects dangerous capabilities and arguments, assigns risk scores, and records security decisions. Future releases will add automatic discovery and scanning of MCP clients and servers, including Codex, Claude Code, and third-party MCP integrations.
+
 > **The security runtime for MCP servers.**
 > Every tool call inspected. Every attack blocked. Every decision logged.
 
